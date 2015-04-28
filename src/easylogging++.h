@@ -13,6 +13,10 @@
 //  http://easylogging.muflihun.com
 //  http://muflihun.com
 //
+//========================================================================
+//  Changes:Apr, 2015
+//  1. Added ELPP_CUSTOMFUNC_FORMAT: Use __FUNCTION__ and __func__
+//
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
 // Compilers and C++0x/C++11 Evaluation
@@ -224,7 +228,15 @@
 #endif  // defined(ELPP_THREAD_SAFE) || ELPP_ASYNC_LOGGING
 // Function macro ELPP_FUNC
 #undef ELPP_FUNC
-#if ELPP_COMPILER_MSVC  // Visual C++
+#if ELPP_CUSTOMFUNC_FORMAT
+#   if defined (__func__)
+#       deine ELPP_FUNC __func__
+#   elif defined (__FUNCTION__)
+#       define ELPP_FUNC __FUNCTION__
+#   else
+#       define ELPP_FUNC ""
+#   endif
+#elif ELPP_COMPILER_MSVC  // Visual C++
 #   define ELPP_FUNC __FUNCSIG__
 #elif ELPP_COMPILER_GCC  // GCC
 #   define ELPP_FUNC __PRETTY_FUNCTION__
