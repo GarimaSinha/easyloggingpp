@@ -17,6 +17,7 @@
 //  Changes:Apr, 2015
 //  1. Added ELPP_CUSTOMFUNC_FORMAT: Use __FUNCTION__ and __func__
 //  2. Changed localtime to gmtime
+//  3. __system_property_get commented, not supported on Android L NDK
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -1447,7 +1448,10 @@ public:
     /// @brief Reads android property value
     static inline std::string getProperty(const char* prop) {
         char propVal[PROP_VALUE_MAX + 1];
-        int ret = __system_property_get(prop, propVal);
+        
+        //GS: As of Android L NDK __system_property_get is removed for 64bit
+        //    setting 0 for now
+        int ret = 0; //__system_property_get(prop, propVal);
         return ret == 0 ? std::string() : std::string(propVal);
     }
 
