@@ -16,6 +16,7 @@
 //========================================================================
 //  Changes:Apr, 2015
 //  1. Added ELPP_CUSTOMFUNC_FORMAT: Use __FUNCTION__ and __func__
+//  2. Changed localtime to gmtime
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -228,13 +229,12 @@
 #endif  // defined(ELPP_THREAD_SAFE) || ELPP_ASYNC_LOGGING
 // Function macro ELPP_FUNC
 #undef ELPP_FUNC
+// Adding custom function format __FUNCTION__
 #if ELPP_CUSTOMFUNC_FORMAT
-#   if defined (__func__)
-#       deine ELPP_FUNC __func__
-#   elif defined (__FUNCTION__)
+#   if ELPP_COMPILER_MSVC
 #       define ELPP_FUNC __FUNCTION__
 #   else
-#       define ELPP_FUNC ""
+#       define ELPP_FUNC __func__
 #   endif
 #elif ELPP_COMPILER_MSVC  // Visual C++
 #   define ELPP_FUNC __FUNCSIG__
@@ -1650,19 +1650,25 @@ private:
     static inline struct ::tm* buildTimeInfo(struct timeval* currTime, struct ::tm* timeInfo) {
 #if ELPP_OS_UNIX
         time_t rawTime = currTime->tv_sec;
-        ::localtime_r(&rawTime, timeInfo);
+        //GS: Changing localtime to gmtime
+        //::localtime_r(&rawTime, timeInfo);
+        ::gmtime_r(&rawTime, timeInfo);
         return timeInfo;
 #else
 #   if ELPP_COMPILER_MSVC
         ELPP_UNUSED(currTime);
         time_t t;
         _time64(&t);
-        localtime_s(timeInfo, &t);
+        //GS: Changing localtime to gmtime
+        //localtime_s(timeInfo, &t);
+        gmtime_s(timeInfo, &t);
         return timeInfo;
 #   else
         // For any other compilers that don't have CRT warnings issue e.g, MinGW or TDM GCC- we use different method
         time_t rawTime = currTime->tv_sec;
-        struct tm* tmInf = localtime(&rawTime);
+        //GS: Changing localtime to gmtime
+        //struct tm* tmInf = localtime(&rawTime);
+        struct tm* tmInf = gmtime(&rawTime);
         *timeInfo = *tmInf;
         return timeInfo;
 #   endif  // ELPP_COMPILER_MSVC
