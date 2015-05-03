@@ -18,6 +18,7 @@
 //  1. Added ELPP_CUSTOMFUNC_FORMAT: Use __FUNCTION__ and __func__
 //  2. Changed localtime to gmtime
 //  3. __system_property_get commented, not supported on Android L NDK
+//  4. getCurrentThreadId - using getpid() from <unistd.h>
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -325,6 +326,7 @@
 #   include <sys/system_properties.h>
 #endif  // ELPP_OS_ANDROID
 #if ELPP_OS_UNIX
+#   include <unistd.h>
 #   include <sys/stat.h>
 #   include <sys/time.h>
 #elif ELPP_OS_WINDOWS
@@ -1019,11 +1021,13 @@ private:
     ScopedLock(void);
 };
 } // namespace internal
-/// @brief Gets ID of currently running threading in windows systems. On unix, nothing is returned.
+/// @brief Gets ID of currently running threading in windows systems. On unix, nothing is returned. [Changed to use getpid() for Unix]
 static inline std::string getCurrentThreadId(void) {
     std::stringstream ss;
 #      if (ELPP_OS_WINDOWS)
     ss << GetCurrentThreadId();
+#       else
+    ss << getpid();
 #      endif  // (ELPP_OS_WINDOWS)
     return ss.str();
 }
