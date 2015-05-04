@@ -14,11 +14,12 @@
 //  http://muflihun.com
 //
 //========================================================================
-//  Changes:Apr, 2015
+//  Changes:[Apr/May], 2015
 //  1. Added ELPP_CUSTOMFUNC_FORMAT: Use __FUNCTION__ and __func__
 //  2. Changed localtime to gmtime
 //  3. __system_property_get commented, not supported on Android L NDK
 //  4. getCurrentThreadId - using getpid() from <unistd.h>
+//  5. Support to rollover logs for day change
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -1653,6 +1654,26 @@ public:
             return static_cast<unsigned long long>((((endTime.tv_sec - startTime.tv_sec) * 1000000) + (endTime.tv_usec - startTime.tv_usec)) / 1000);
         }
     }
+    
+    static inline bool checkDayOver(struct timeval savedTime)
+    {
+        struct tm savedTimeInfo;
+        buildTimeInfo(&savedTime, &savedTimeInfo);
+        
+        struct timeval nowTime;
+        gettimeofday(&nowTime);
+        struct tm nowTimeInfo;
+        buildTimeInfo(&nowTime, &nowTimeInfo);
+        
+        if (nowTimeInfo.tm_yday > savedTimeInfo.tm_yday)
+            return true;
+        
+        if (nowTimeInfo.tm_year > savedTimeInfo.tm_year)
+            return true;
+        
+        
+        return false;
+     }
 
 private:
     static inline struct ::tm* buildTimeInfo(struct timeval* currTime, struct ::tm* timeInfo) {
@@ -2959,6 +2980,8 @@ private:
     std::map<Level, base::FileStreamPtr> m_fileStreamMap;
     std::map<Level, std::size_t> m_maxLogFileSizeMap;
     std::map<Level, std::size_t> m_logFlushThresholdMap;
+    std::map<Level, struct timeval> m_initTimeMap;
+    std::map<Level, std::string> m_originalFilenameMap;
     base::LogStreamsReferenceMap* m_logStreamsReference;
 
     friend class el::Helpers;
@@ -3037,6 +3060,7 @@ private:
 
     void build(Configurations* configurations) {
         base::threading::ScopedLock scopedLock(lock());
+        
         auto getBool = [] (std::string boolStr) -> bool {  // Pass by value for trimming
             base::utils::Str::trim(boolStr);
             return (boolStr == "TRUE" || boolStr == "true" || boolStr == "1");
@@ -3079,6 +3103,13 @@ private:
             Configuration* conf = *it;
             if (conf->configurationType() == ConfigurationType::Filename) {
                 insertFile(conf->level(), conf->value());
+                
+                //GS: insert filename format and creation time to check for rollover
+                m_originalFilenameMap.insert(std::make_pair(conf->level(), conf->value()));
+                
+                struct timeval initTime;
+                base::utils::DateTime::gettimeofday(&initTime);
+                m_initTimeMap.insert(std::make_pair(conf->level(), initTime));
             }
         }
         for (std::vector<Configuration*>::iterator conf = withFileSizeLimit.begin();
@@ -3156,12 +3187,27 @@ private:
             if (filestreamIter == m_logStreamsReference->end()) {
                 // We need a completely new stream, nothing to share with
                 fs = base::utils::File::newFileStream(resolvedFilename);
-                m_filenameMap.insert(std::make_pair(level, resolvedFilename));
+                
+                if (m_filenameMap.end() == m_filenameMap.find(level))
+                {
+                    m_filenameMap.insert(std::make_pair(level, resolvedFilename));
+                }
+                else
+                {
+                    m_filenameMap[level] = resolvedFilename;
+                }
                 m_fileStreamMap.insert(std::make_pair(level, base::FileStreamPtr(fs)));
                 m_logStreamsReference->insert(std::make_pair(resolvedFilename, base::FileStreamPtr(m_fileStreamMap.at(level))));
             } else {
                 // Woops! we have an existing one, share it!
-                m_filenameMap.insert(std::make_pair(level, filestreamIter->first));
+                if (m_filenameMap.end() == m_filenameMap.find(level))
+                {
+                    m_filenameMap.insert(std::make_pair(level, filestreamIter->first));
+                }
+                else
+                {
+                    m_filenameMap[level] =filestreamIter->first;
+                }
                 m_fileStreamMap.insert(std::make_pair(level, base::FileStreamPtr(filestreamIter->second)));
                 fs = filestreamIter->second.get();
             }
@@ -3184,13 +3230,41 @@ private:
         }
         std::size_t maxLogFileSize = unsafeGetConfigByVal(level, &m_maxLogFileSizeMap, "maxLogFileSize");
         std::size_t currFileSize = base::utils::File::getSizeOfFile(fs);
-        if (maxLogFileSize != 0 && currFileSize >= maxLogFileSize) {
+        
+        bool isDayOver = base::utils::DateTime::checkDayOver(m_initTimeMap[level]);
+        
+        if (isDayOver || (maxLogFileSize != 0 && currFileSize >= maxLogFileSize)) {
             std::string fname = unsafeGetConfigByRef(level, &m_filenameMap, "filename");
             ELPP_INTERNAL_INFO(1, "Truncating log file [" << fname << "] as a result of configurations for level ["
                     << LevelHelper::convertToString(level) << "]");
             fs->close();
-            PreRollOutCallback(fname.c_str(), currFileSize);
+            
+            if (isDayOver)
+            {
+                //reset time
+                struct timeval nowTime;
+                base::utils::DateTime::gettimeofday(&nowTime);
+                
+                //update path and time
+                for (Configurations::const_iterator it = m_configurations->begin(); it != m_configurations->end(); ++it) {
+                    Configuration* conf = *it;
+                    m_initTimeMap[conf->level()] = nowTime;
+                    insertFile(conf->level(), m_originalFilenameMap[conf->level()]);
+                }
+                
+                //update log filename
+                fname = unsafeGetConfigByRef(level, &m_filenameMap, "filename");
+                
+                if (base::utils::File::pathExists(fname.c_str()))
+                    PreRollOutCallback(fname.c_str(), 0);
+            }
+            else
+            {
+                PreRollOutCallback(fname.c_str(), currFileSize);
+            }
+            
             fs->open(fname, std::fstream::out | std::fstream::trunc);
+            
             return true;
         }
         return false;
