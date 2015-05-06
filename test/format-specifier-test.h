@@ -14,6 +14,17 @@ TEST(FormatSpecifierTest, TestFBaseSpecifier) {
     reconfigureLoggersForTest();
 }
 
+TEST(FormatSpecifierTest, TestThreadIdSpecifier) {
+    Configurations c;
+    c.setGlobally(el::ConfigurationType::Format, "%thread %fbase: %msg");
+    el::Loggers::reconfigureLogger(consts::kDefaultLoggerId, c);
+    LOG(INFO) << "My fbase test";
+    std::string s = BUILD_STR(getThreadId() << " format-specifier-test.h: My fbase test\n");
+    EXPECT_EQ(s, tail(1));
+    // Reset back
+    reconfigureLoggersForTest();
+}
+
 TEST(FormatSpecifierTest, TestLevShortSpecifier) {
     const char* param[10];
     param[0] = "myprog";
