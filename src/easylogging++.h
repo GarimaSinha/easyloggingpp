@@ -20,6 +20,7 @@
 //  3. __system_property_get commented, not supported on Android L NDK
 //  4. getCurrentThreadId - using getpid() from <unistd.h>
 //  5. Support to rollover logs for day change
+//  6. Windows: use passed time to create time_t (was being reset to nowTime)
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -1688,9 +1689,10 @@ private:
         ELPP_UNUSED(currTime);
         time_t t;
         _time64(&t);
-        //GS: Changing localtime to gmtime
+        //GS: Changing localtime to gmtime + using passed time to convert
         //localtime_s(timeInfo, &t);
-        gmtime_s(timeInfo, &t);
+        time_t rawTime = currTime->tv_sec;
+        gmtime_s(timeInfo, &rawTime);
         return timeInfo;
 #   else
         // For any other compilers that don't have CRT warnings issue e.g, MinGW or TDM GCC- we use different method
