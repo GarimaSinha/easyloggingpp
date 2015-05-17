@@ -21,6 +21,7 @@
 //  4. getCurrentThreadId - using getpid() from <unistd.h>
 //  5. Support to rollover logs for day change
 //  6. Windows: use passed time to create time_t (was being reset to nowTime)
+//  7. Check for DEBUG/NDEBUG removed, debug logs to be printed always (app-specific)
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -264,11 +265,11 @@
 #if (!defined(ELPP_DISABLE_LOGS))
 #   define ELPP_LOGGING_ENABLED 1
 #endif  // (!defined(ELPP_DISABLE_LOGS))
-#if (!defined(ELPP_DISABLE_DEBUG_LOGS) && (ELPP_LOGGING_ENABLED) && ((defined(_DEBUG)) || (!defined(NDEBUG))))
+#if (!defined(ELPP_DISABLE_DEBUG_LOGS) && (ELPP_LOGGING_ENABLED))
 #   define ELPP_DEBUG_LOG 1
 #else
 #   define ELPP_DEBUG_LOG 0
-#endif  // (!defined(ELPP_DISABLE_DEBUG_LOGS) && (ELPP_LOGGING_ENABLED) && ((defined(_DEBUG)) || (!defined(NDEBUG))))
+#endif  // (!defined(ELPP_DISABLE_DEBUG_LOGS) && (ELPP_LOGGING_ENABLED))
 #if (!defined(ELPP_DISABLE_INFO_LOGS) && (ELPP_LOGGING_ENABLED))
 #   define ELPP_INFO_LOG 1
 #else
