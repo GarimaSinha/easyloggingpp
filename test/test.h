@@ -71,6 +71,10 @@ static std::string getDate(const char* format = "%a %b %d, %H:%m") {
     return DateTime::getDateTime(format, &msWidth);
 }
 
+static std::string getThreadId() {
+   return el::base::threading::getCurrentThreadId();
+}
+
 static bool fileExists(const char* filename) {
     el::base::type::fstream_t fstr(filename, el::base::type::fstream_t::in);
     return fstr.is_open();

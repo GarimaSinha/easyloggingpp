@@ -15,6 +15,18 @@ TEST(PLogTest, WriteLog) {
     EXPECT_EQ(expected, actual);
 }
 
+TEST(PLogTest, DebugAlwaysEnabledCheck) {
+   #define _DEBUG
+   LOG(DEBUG) << "LOG(DEBUG) should be resolved";
+   std::string expected = BUILD_STR(getDate() << " LOG(DEBUG) should be resolved\n");
+   EXPECT_EQ(expected, tail(1));
+
+   #undef _DEBUG
+   LOG(DEBUG) << "LOG(DEBUG) should still be resolved";
+   expected = BUILD_STR(getDate() << " LOG(DEBUG) should still be resolved\n");
+   EXPECT_EQ(expected, tail(1));
+}
+
 TEST(PLogTest, DebugVersionLogs) {
     // Test enabled
     #undef ELPP_DEBUG_LOG

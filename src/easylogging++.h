@@ -22,6 +22,7 @@
 //  5. Support to rollover logs for day change
 //  6. Windows: use passed time to create time_t (was being reset to nowTime)
 //  7. Check for DEBUG/NDEBUG removed, debug logs to be printed always (app-specific)
+//  8. Android logcat output support added
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -163,10 +164,19 @@
 #      define ELPP_INTERNAL_INFO_LEVEL 9
 #   endif  // !(defined(ELPP_INTERNAL_INFO_LEVEL))
 #   if !defined(ELPP_INTERNAL_INFO)
-#      define ELPP_INTERNAL_INFO(lvl, msg) { if (lvl <= ELPP_INTERNAL_INFO_LEVEL) { \
-          std::stringstream internalInfoStream; internalInfoStream << "<INFO> " << msg; \
-          ELPP_INTERNAL_DEBUGGING_OUT_INFO << ELPP_INTERNAL_DEBUGGING_MSG(internalInfoStream.str()) \
-             << ELPP_INTERNAL_DEBUGGING_ENDL; }}
+#       if defined ELPP_ANDROID_OS
+#           define ELPP_INTERNAL_INFO(lvl, msg) { \
+                if (lvl <= ELPP_INTERNAL_INFO_LEVEL) { \
+                std::stringstream internalInfoStream; \
+                internalInfoStream << "<INFO> " << msg; \
+                    ELPP_COUT(ELPP_INTERNAL_DEBUGGING_MSG(internalInfoStream.str()); }}
+#       else
+#           define ELPP_INTERNAL_INFO(lvl, msg) { \
+                if (lvl <= ELPP_INTERNAL_INFO_LEVEL) { \
+                std::stringstream internalInfoStream; \
+                internalInfoStream << "<INFO> " << msg; \
+            ELPP_INTERNAL_DEBUGGING_OUT_INFO << ELPP_INTERNAL_DEBUGGING_MSG(internalInfoStream.str()) << ELPP_INTERNAL_DEBUGGING_ENDL; }}
+#       endif
 #   endif
 #else
 #   undef ELPP_INTERNAL_INFO
@@ -327,6 +337,9 @@
 #endif  // ELPP_STACKTRACE
 #if ELPP_OS_ANDROID
 #   include <sys/system_properties.h>
+#   include <android/log.h>
+#   define  LOG_TAG  "GalleryCpp"
+#   define  LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #endif  // ELPP_OS_ANDROID
 #if ELPP_OS_UNIX
 #   include <unistd.h>
@@ -459,6 +472,8 @@ namespace type {
 #   define ELPP_STRLEN wcslen
 #   if defined ELPP_CUSTOM_COUT
 #      define ELPP_COUT ELPP_CUSTOM_COUT
+#   elif defined ELPP_OS_ANDROID
+#       define ELPP_COUT(log) LOGD("From native: %s", log);
 #   else
 #      define ELPP_COUT std::wcout
 #   endif  // defined ELPP_CUSTOM_COUT
@@ -472,6 +487,8 @@ typedef std::wostream ostream_t;
 #   define ELPP_STRLEN strlen
 #   if defined ELPP_CUSTOM_COUT
 #      define ELPP_COUT ELPP_CUSTOM_COUT
+#   elif defined ELPP_OS_ANDROID
+#      define ELPP_COUT(log)    LOGD("From native: %s", log.c_str());
 #   else
 #      define ELPP_COUT std::cout
 #   endif  // defined ELPP_CUSTOM_COUT
@@ -4302,7 +4319,17 @@ private:
             if (m_data->logMessage()->logger()->m_typedConfigurations->toStandardOutput(m_data->logMessage()->level())) {
                 if (ELPP->hasFlag(LoggingFlag::ColoredTerminalOutput))
                     m_data->logMessage()->logger()->logBuilder()->convertToColoredOutput(&logLine, m_data->logMessage()->level());
+#if defined ELPP_OS_ANDROID
+#   if defined ELPP_UNICODE
+                char* line = base::utils::Str::wcharPtrToCharPtr(logLine.c_str());
+                ELPP_COUT(line);
+                free(line);
+#   else
+                ELPP_COUT(logLine);
+#   endif //defined ELPP_UNICODE
+#else
                 ELPP_COUT << ELPP_COUT_LINE(logLine);
+#endif //defined ELPP_OS_ANDROID
              }
         }
 #if defined(ELPP_SYSLOG)
@@ -4340,7 +4367,17 @@ protected:
         if (data->dispatchAction() == base::DispatchAction::NormalLog && data->logMessage()->logger()->typedConfigurations()->toStandardOutput(data->logMessage()->level())) {
             if (ELPP->hasFlag(LoggingFlag::ColoredTerminalOutput))
                 data->logMessage()->logger()->logBuilder()->convertToColoredOutput(&logLine, data->logMessage()->level());
+#if defined ELPP_OS_ANDROID
+#   if defined ELPP_UNICODE
+            char* line = base::utils::Str::wcharPtrToCharPtr(logLine.c_str());
+            ELPP_COUT(line);
+            free(line);
+#   else
+            ELPP_COUT(logLine);
+#   endif //defined ELPP_UNICODE
+#else
             ELPP_COUT << ELPP_COUT_LINE(logLine);
+#endif
         }
         // Save resources and only queue if we want to write to file otherwise just ignore handler
         if (data->logMessage()->logger()->typedConfigurations()->toFile(data->logMessage()->level())) {
