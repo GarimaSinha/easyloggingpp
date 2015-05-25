@@ -23,6 +23,7 @@
 //  6. Windows: use passed time to create time_t (was being reset to nowTime)
 //  7. Check for DEBUG/NDEBUG removed, debug logs to be printed always (app-specific)
 //  8. Android logcat output support added
+//  9. __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -96,9 +97,9 @@
 #   define ELPP_OS_UNIX 1
 #endif  // ((ELPP_OS_LINUX || ELPP_OS_MAC || ELPP_OS_FREEBSD || ELPP_OS_SOLARIS) && (!ELPP_OS_WINDOWS))
 // Android
-#if defined(__ANDROID__)
+#if defined(SUPPORT_ANDROID)
 #   define ELPP_OS_ANDROID 1
-#endif  // defined(__ANDROID__)
+#endif  // defined(SUPPORT_ANDROID)
 // Evaluating Cygwin as *nix OS
 #if !ELPP_OS_UNIX && !ELPP_OS_WINDOWS && ELPP_CYGWIN
 #   undef ELPP_OS_UNIX
@@ -166,6 +167,7 @@
 #   if !defined(ELPP_INTERNAL_INFO)
 #       if defined ELPP_ANDROID_OS
 #           define ELPP_INTERNAL_INFO(lvl, msg) { \
+                ELPP_COUT(ELPP_INTERNAL_DEBUGGING_MSG(internalInfoStream.str()); }}\
                 if (lvl <= ELPP_INTERNAL_INFO_LEVEL) { \
                 std::stringstream internalInfoStream; \
                 internalInfoStream << "<INFO> " << msg; \
@@ -193,7 +195,7 @@
 #      endif  // ELPP_COMPILER_MSVC
 #   endif  // ELPP_COMPILER_GCC
 #endif  // (defined(ELPP_STACKTRACE_ON_CRASH))
-// Miscellaneous macros
+w// Miscellaneous macros
 #define ELPP_UNUSED(x) (void)x
 #if ELPP_OS_UNIX
 // Log file permissions for unix-based systems
@@ -473,7 +475,7 @@ namespace type {
 #   if defined ELPP_CUSTOM_COUT
 #      define ELPP_COUT ELPP_CUSTOM_COUT
 #   elif defined ELPP_OS_ANDROID
-#       define ELPP_COUT(log) LOGD("From native: %s", log);
+#       define ELPP_COUT(log) LOGD("From native(unicode): %s", log);
 #   else
 #      define ELPP_COUT std::wcout
 #   endif  // defined ELPP_CUSTOM_COUT
@@ -1125,6 +1127,7 @@ public:
         base::type::fstream_t *fs = new base::type::fstream_t(filename.c_str(), 
             base::type::fstream_t::out | base::type::fstream_t::app);
 #if defined(ELPP_UNICODE)
+        ELPP_COUT("In newFileStream\n");
         std::locale elppUnicodeLocale("");
 #if ELPP_OS_WINDOWS
         std::locale elppUnicodeLocaleWindows(elppUnicodeLocale, new std::codecvt_utf8_utf16<wchar_t>);
