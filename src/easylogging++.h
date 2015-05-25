@@ -195,7 +195,7 @@
 #      endif  // ELPP_COMPILER_MSVC
 #   endif  // ELPP_COMPILER_GCC
 #endif  // (defined(ELPP_STACKTRACE_ON_CRASH))
-w// Miscellaneous macros
+// Miscellaneous macros
 #define ELPP_UNUSED(x) (void)x
 #if ELPP_OS_UNIX
 // Log file permissions for unix-based systems
@@ -1127,7 +1127,6 @@ public:
         base::type::fstream_t *fs = new base::type::fstream_t(filename.c_str(), 
             base::type::fstream_t::out | base::type::fstream_t::app);
 #if defined(ELPP_UNICODE)
-        ELPP_COUT("In newFileStream\n");
         std::locale elppUnicodeLocale("");
 #if ELPP_OS_WINDOWS
         std::locale elppUnicodeLocaleWindows(elppUnicodeLocale, new std::codecvt_utf8_utf16<wchar_t>);
