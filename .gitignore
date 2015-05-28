@@ -5,3 +5,5 @@ release.info
 bin/*
 logs/*
 experiments/*
+
+easylogging++_android.h

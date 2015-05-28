@@ -23,7 +23,7 @@
 //  6. Windows: use passed time to create time_t (was being reset to nowTime)
 //  7. Check for DEBUG/NDEBUG removed, debug logs to be printed always (app-specific)
 //  8. Android logcat output support added
-//  9. __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
+//  9. Reverted: __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -97,9 +97,9 @@
 #   define ELPP_OS_UNIX 1
 #endif  // ((ELPP_OS_LINUX || ELPP_OS_MAC || ELPP_OS_FREEBSD || ELPP_OS_SOLARIS) && (!ELPP_OS_WINDOWS))
 // Android
-#if defined(SUPPORT_ANDROID)
+#if defined(ANDROID) || defined (__ANDROID__)
 #   define ELPP_OS_ANDROID 1
-#endif  // defined(SUPPORT_ANDROID)
+#endif  // defined(ANDROID) || defined (__ANDROID__)
 // Evaluating Cygwin as *nix OS
 #if !ELPP_OS_UNIX && !ELPP_OS_WINDOWS && ELPP_CYGWIN
 #   undef ELPP_OS_UNIX
