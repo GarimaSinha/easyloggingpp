@@ -24,6 +24,7 @@
 //  7. Check for DEBUG/NDEBUG removed, debug logs to be printed always (app-specific)
 //  8. Android logcat output support added
 //  9. Reverted: __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
+// 10. TODO: Unicode handling
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
