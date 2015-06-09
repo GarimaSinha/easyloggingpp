@@ -24,7 +24,7 @@
 //  7. Check for DEBUG/NDEBUG removed, debug logs to be printed always (app-specific)
 //  8. Android logcat output support added
 //  9. Reverted: __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
-// 10. TODO: Unicode handling
+// 10. Changes to correct string converstion with unicode flag in simple_log
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -4747,11 +4747,17 @@ public:
             return *this;
         }
 #   if defined(ELPP_UNICODE)
-        m_logger->stream() << msg;
-#   else
+        //m_logger->stream() << msg;
+        
         char* buff_ = base::utils::Str::wcharPtrToCharPtr(msg);
         m_logger->stream() << buff_;
         free(buff_);
+#   else
+        //char* buff_ = base::utils::Str::wcharPtrToCharPtr(msg);
+        //m_logger->stream() << buff_;
+        //free(buff_);
+        
+        m_logger->stream() << msg;
 #   endif
         if (ELPP->hasFlag(LoggingFlag::AutoSpacing)) {
             m_logger->stream() << " ";
