@@ -14,7 +14,7 @@
 //  http://muflihun.com
 //
 //========================================================================
-//  Changes:[Apr/May], 2015
+//  Changes:[Apr/May/Jul], 2015
 //  1. Added ELPP_CUSTOMFUNC_FORMAT: Use __FUNCTION__ and __func__
 //  2. Changed localtime to gmtime
 //  3. __system_property_get commented, not supported on Android L NDK
@@ -25,6 +25,7 @@
 //  8. Android logcat output support added
 //  9. Reverted: __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
 // 10. Changes to correct string converstion with unicode flag in simple_log
+// 11. crashAbort(): checking if DisableApplicationAbortOnFatalLog is set before abort
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -5732,7 +5733,8 @@ static void logCrashReason(int sig, bool stackTraceIfAvailable, Level level, con
     ELPP_WRITE_LOG(el::base::Writer, level, base::DispatchAction::NormalLog, logger) << ss.str();
 }
 static inline void crashAbort(int sig) {
-    base::utils::abort(sig);
+    if (!ELPP->hasFlag(LoggingFlag::DisableApplicationAbortOnFatalLog))
+        base::utils::abort(sig);
 }
 /// @brief Default application crash handler
 ///
@@ -5831,7 +5833,9 @@ public:
             else
                 ss << " (line number not specified)";
         }
-        base::utils::abort(sig, ss.str());
+        
+        if (!ELPP->hasFlag(LoggingFlag::DisableApplicationAbortOnFatalLog))
+            base::utils::abort(sig, ss.str());
     }
     /// @brief Logs reason of crash as per sig
     /// @param sig Crash signal
