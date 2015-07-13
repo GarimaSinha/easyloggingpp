@@ -26,6 +26,7 @@
 //  9. Reverted: __ANDROID__ changed to SUPPORT_ANDROID to avoid conflict with gtest
 // 10. Changes to correct string converstion with unicode flag in simple_log
 // 11. crashAbort(): checking if DisableApplicationAbortOnFatalLog is set before abort
+// 12. Use std::fixed to avoid double logged in exponential
 //
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
@@ -4715,7 +4716,7 @@ public:
 
 #   define ELPP_SIMPLE_LOG(LOG_TYPE)\
     inline MessageBuilder& operator<<(LOG_TYPE msg) {\
-        m_logger->stream() << msg;\
+        m_logger->stream() << std::fixed << msg;\
         if (ELPP->hasFlag(LoggingFlag::AutoSpacing)) {\
             m_logger->stream() << " ";\
         }\
